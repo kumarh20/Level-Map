@@ -1,89 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gravity-Based Water Level Simulation</title>
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(to bottom, #a0d8ef, #ffffff);
-            overflow: hidden;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gravity-Based Water Simulation</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: linear-gradient(to bottom, #a0d8ef, #ffffff);
+      overflow: hidden;
+    }
 
-        .bucket {
-            position: relative;
-            width: 200px;
-            height: 300px;
-            border: 5px solid rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.2);
-            overflow: hidden;
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
-        }
+    .bucket {
+      position: relative;
+      width: 200px;
+      height: 300px;
+      border: 5px solid rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.2);
+      overflow: hidden;
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+    }
 
-        .water {
-            position: absolute;
-            bottom: 0;
-            width: 110%;
-            /* Extra width for tilt overflow */
-            height: 50%;
-            background: linear-gradient(to top, #3498db, #5dade2);
-            transform-origin: center top;
-            transition: transform 0.1s ease, height 0.1s ease;
-        }
+    .water {
+      position: absolute;
+      bottom: 0;
+      width: 110%; /* Extra width for tilt overflow */
+      height: 50%;
+      background: linear-gradient(to top, #3498db, #5dade2);
+      transform-origin: center top;
+      transition: transform 0.1s ease, height 0.1s ease;
+    }
 
-        .instructions {
-            position: absolute;
-            top: 20px;
-            width: 90%;
-            text-align: center;
-            font-family: Arial, sans-serif;
-            font-size: 16px;
-            color: #333;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 10px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-    </style>
+    .instructions {
+      position: absolute;
+      top: 20px;
+      width: 90%;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      color: #333;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+  </style>
 </head>
-
 <body>
-    <div class="instructions">
-        Tilt your device to see the water level adjust!
-    </div>
-    <div class="bucket">
-        <div class="water"></div>
-    </div>
+  <div class="instructions">
+    If prompted, grant motion sensor access. Then tilt your device to adjust the water level.
+  </div>
+  <div class="bucket">
+    <div class="water"></div>
+  </div>
 
-    <script>
-        const water = document.querySelector('.water');
+  <script>
+    const water = document.querySelector('.water');
 
-        // Handle device orientation for gravity simulation
-        window.addEventListener('deviceorientation', (event) => {
-            const tiltX = event.gamma || 0; // Side-to-side tilt
-            const tiltY = event.beta || 0; // Front-to-back tilt
+    // Request permission for motion sensors (iOS-specific)
+    if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
+      DeviceOrientationEvent.requestPermission()
+        .then((response) => {
+          if (response === "granted") {
+            window.addEventListener("deviceorientation", handleOrientation);
+          } else {
+            alert("Motion sensor permission denied.");
+          }
+        })
+        .catch(console.error);
+    } else {
+      // For Android or browsers without permission requirements
+      window.addEventListener("deviceorientation", handleOrientation);
+    }
 
-            // Adjust water tilt based on gamma and beta values
-            water.style.transform = `skewX(${tiltX * 0.5}deg) skewY(${tiltY * 0.5}deg)`;
+    function handleOrientation(event) {
+      const tiltX = event.gamma || 0; // Side-to-side tilt
+      const tiltY = event.beta || 0;  // Front-to-back tilt
 
-            // Adjust water level (for demonstration, tied to front-to-back tilt)
-            const baseHeight = 50; // Base height percentage
-            const adjustedHeight = baseHeight - tiltY * 0.2; // Adjust level slightly with beta
-            water.style.height = `${Math.max(20, Math.min(80, adjustedHeight))}%`; // Clamp level between 20% and 80%
-        });
+      // Adjust water tilt based on orientation
+      water.style.transform = `skewX(${tiltX * 0.5}deg) skewY(${tiltY * 0.5}deg)`;
 
-        // Fallback message if gyroscope not supported
-        if (!window.DeviceOrientationEvent) {
-            alert('Your device does not support gyroscope-based orientation.');
-        }
-    </script>
+      // Adjust water level
+      const baseHeight = 50; // Base water height
+      const adjustedHeight = baseHeight - tiltY * 0.2; // Adjust height with tilt
+      water.style.height = `${Math.max(20, Math.min(80, adjustedHeight))}%`; // Clamp height
+    }
+  </script>
 </body>
-
 </html>
