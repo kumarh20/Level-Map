@@ -53,7 +53,7 @@
 </head>
 <body>
   <div class="instructions">
-    If prompted, grant motion sensor access. Then tilt your device to adjust the water level.
+    Grant motion sensor access if prompted. Then tilt your device to see the water move.
   </div>
   <div class="bucket">
     <div class="water"></div>
@@ -62,34 +62,43 @@
   <script>
     const water = document.querySelector('.water');
 
-    // Request permission for motion sensors (iOS-specific)
+    function handleOrientation(event) {
+      const tiltX = event.gamma || 0; // Side-to-side tilt
+      const tiltY = event.beta || 0;  // Front-to-back tilt
+
+      console.log(`TiltX: ${tiltX}, TiltY: ${tiltY}`); // Debugging
+      water.style.transform = `skewX(${tiltX * 0.5}deg) skewY(${tiltY * 0.5}deg)`;
+
+      const baseHeight = 50; // Base water height
+      const adjustedHeight = baseHeight - tiltY * 0.2; // Adjust height with tilt
+      water.style.height = `${Math.max(20, Math.min(80, adjustedHeight))}%`; // Clamp height
+    }
+
+    // Request permission for iOS devices
     if (typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function") {
       DeviceOrientationEvent.requestPermission()
         .then((response) => {
           if (response === "granted") {
             window.addEventListener("deviceorientation", handleOrientation);
           } else {
-            alert("Motion sensor permission denied.");
+            alert("Motion sensor access denied.");
           }
         })
-        .catch(console.error);
+        .catch((err) => {
+          console.error("Error requesting permission:", err);
+        });
     } else {
-      // For Android or browsers without permission requirements
+      // For Android and browsers that don't require explicit permissions
       window.addEventListener("deviceorientation", handleOrientation);
     }
 
-    function handleOrientation(event) {
-      const tiltX = event.gamma || 0; // Side-to-side tilt
-      const tiltY = event.beta || 0;  // Front-to-back tilt
-
-      // Adjust water tilt based on orientation
-      water.style.transform = `skewX(${tiltX * 0.5}deg) skewY(${tiltY * 0.5}deg)`;
-
-      // Adjust water level
-      const baseHeight = 50; // Base water height
-      const adjustedHeight = baseHeight - tiltY * 0.2; // Adjust height with tilt
-      water.style.height = `${Math.max(20, Math.min(80, adjustedHeight))}%`; // Clamp height
-    }
+    // Debugging: Check if device supports orientation events
+    window.addEventListener("deviceorientation", (event) => {
+      console.log("DeviceOrientation Event Fired:", event);
+      if (event.beta === null || event.gamma === null) {
+        alert("Device does not support orientation data.");
+      }
+    });
   </script>
 </body>
 </html>
